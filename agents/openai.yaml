@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenClaw Windows, macOS, Linux"
+  short_description: "Một skill tự chứa cho OpenClaw đa nền tảng và VPS."
+  default_prompt: "Dùng duy nhất skill này, xác định Windows, macOS hay Linux và loại máy local/VPS/member, rồi cài hoặc cấu hình OpenClaw bằng workflow tích hợp mà không gọi skill phụ."
