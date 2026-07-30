@@ -188,8 +188,24 @@ Khi người dùng nói rõ “chỉ tạo VPS thành viên”, “chỉ tạo c
 - Chạy gateway bằng home thật của member: `HOME=/home/<name> tmux new-session -d -s openclaw "HOME=/home/<name> openclaw gateway run"`.
 - Không khởi chạy Gateway hoặc CLI OpenClaw với `HOME=/root` nếu `/root/.openclaw` là symlink tới `/home/<name>/.openclaw`; exec approvals sẽ từ chối traversal qua symlink.
 - Mọi `docker exec ... openclaw` trong automation phải truyền `-e HOME=/home/<name>` hoặc chạy qua wrapper đã khóa `HOME`.
-- Custom Provider chuẩn cho 9Router: Endpoint ID `9rt`, API Base URL `https://9router.anhlaptrinh.vn/v1`, Model ID `codex`, primary model `9rt/codex`.
-- Nếu người dùng chọn endpoint compatibility `Unknown (detect automatically)`, lưu theo schema OpenClaw giống member mẫu `anhlaptrinh`: `api: openai-completions`.
+- **Cấu hình Custom Provider cho Token Codex (BẮT BUỘC KHI DÙNG VPS THÀNH VIÊN):** Tuyệt đối không trỏ nhầm URL sang 9Router. Khi cấu hình thủ công vào `openclaw.json`, bắt buộc dùng đúng nguyên mẫu JSON sau, không tự thêm thuộc tính lạ như `enabled`:
+```json
+"models": {
+  "providers": {
+    "token-codex": {
+      "baseUrl": "https://codex.anhlaptrinh.vn/v1",
+      "api": "openai-completions",
+      "apiKey": "${TOKEN_CODEX_API_KEY}"
+    }
+  }
+},
+"agents": {
+  "defaults": {
+    "models": { "token-codex/GPT-5.6-sol": {} }
+  }
+}
+```
+- Nếu dùng 9Router (chỉ dùng khi không có Token Codex): Endpoint ID `9rt`, API Base URL `https://9router.anhlaptrinh.vn/v1`, Model ID `codex`, `api: openai-completions`.
 - Mặc định cấu hình tạo ảnh giống member mẫu `anhlaptrinh`: `imageModel.primary` và `imageGenerationModel.primary` là `9rt/codex`, `agents.defaults.models` có cả `9r/codex` và `9rt/codex`, model `9rt/codex` có `input: ["text", "image"]`, `maxTokens: 4096`.
 - Mặc định bật web search cho member VPS bằng plugin `duckduckgo`, vì DuckDuckGo không cần API key và tránh lỗi `no provider is available` khi bot gọi `web_search`.
 - Khi tạo/cấu hình trợ lý mới, trong `/root/.openclaw/openclaw.json` của container member VPS phải có `plugins.entries.duckduckgo.enabled = true` và `tools.web.search.provider = "duckduckgo"`.
@@ -934,6 +950,31 @@ Báo cho người dùng:
 - Link đăng nhập xem credit/API usage còn lại: `https://codex.anhlaptrinh.vn/`
 - Xác nhận API Token Codex đã được cấu hình vào member VPS và provider/model đã test thành công; không nêu full API key
 - Nếu có Telegram group: báo `accountId`, Group ID, user ID allowlist, `requireMention`, trạng thái Privacy Mode, validate, gateway, inbound và outbound; không nêu bot token hoặc API key.
+
+## Tích hợp Fanpage và CSKH (On-Demand)
+
+Skill này chứa sẵn toàn bộ mã nguồn để tự động hóa đăng bài và nhắn tin CSKH qua Fanpage Facebook, được lưu trữ tại thư mục con `resources/post-fanpage-fb/`. Khi người dùng yêu cầu cài đặt Auto Post Facebook hoặc Auto Nhắn tin CSKH, hãy thực hiện cài đặt trực tiếp từ thư mục này.
+
+**Tuyệt đối tuân thủ 6 nguyên tắc (Checklist) sau nếu phải thiết lập tích hợp này:**
+1. **Kiểm tra đúng tên file JSON:** File Service Account của Google Sheets **BẮT BUỘC** phải được đổi tên thành `googlesheetcn.json` và nằm ở thư mục gốc của dự án.
+2. **Đầy đủ Token trong `.env`:** Phải có file `.env` ở thư mục gốc, chứa đủ `SPREADSHEET_ID`, `FB_PAGE_ID`, `FB_PAGE_ACCESS_TOKEN`, `MESSENGER_TOKEN`.
+3. **Quyền truy cập Google Sheet:** Bắt buộc phải Share quyền **Editor** của bảng tính cho địa chỉ email service account bên trong file `googlesheetcn.json`.
+4. **Thư mục chứa ảnh:** Đảm bảo có thư mục `images/` nằm ở thư mục gốc.
+5. **Cài đặt Cronjob chuẩn ALT:** KHÔNG chèn trực tiếp lệnh `python` vào `crontab`. Bắt buộc dùng file bash wrapper `run_fanpage_cron.sh` hoặc `run_cskh_cron.sh` (có chứa lệnh cd và gọi venv).
+6. **Cấp quyền thực thi:** File bash chạy cron bắt buộc phải được cấp quyền `chmod +x`.
+7. **Tích hợp OpenClaw Workspace & Prompt (BẮT BUỘC):** Copy `SKILL.md` vào `~/.openclaw/workspace/skills/post-fanpage-fb/SKILL.md` và khai báo cấu hình vai trò (`IDENTITY.md`) + ánh xạ lệnh chạy bash script (`AGENTS.md`) để OpenClaw Telegram Bot tự biết thực thi script Python trên VPS thay vì trả lời lý thuyết chung chung.
+
+### Phân luồng Hướng dẫn 
+
+**Luồng 1: Nếu người dùng yêu cầu "Cài auto post Facebook" hoặc "Đăng bài Fanpage"**
+- Chỉ tập trung hướng dẫn người dùng cấu hình tab "Fanpage" trên Google Sheet.
+- Mặc định thiết lập chạy mỗi 4 giờ (`0 */4 * * *`) bằng file `run_fanpage_cron.sh`. Nếu có yêu cầu khác thì đổi lịch tương ứng.
+
+**Luồng 2: Nếu người dùng yêu cầu "Cài tự động CSKH" hoặc "Cài auto nhắn tin"**
+- Chỉ tập trung hướng dẫn người dùng cấu hình tab "Chăm Sóc Khách Hàng" trên Google Sheet.
+- Mặc định thiết lập chạy mỗi 5 phút (`*/5 * * * *`) bằng file `run_cskh_cron.sh`.
+
+Không cài mặc định hoặc lôi kéo người dùng cài đặt tính năng này trừ khi được yêu cầu rõ ràng.
 
 ## Quy trình sửa/nâng cấp workflow
 
