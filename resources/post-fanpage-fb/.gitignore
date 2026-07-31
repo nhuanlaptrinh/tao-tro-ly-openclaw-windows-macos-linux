@@ -5,7 +5,6 @@ dist/
 *.exe
 
 # Keys & Auth (Tuyệt đối không đẩy lên repo public!)
-*.json
 .env
 .env.*
 
