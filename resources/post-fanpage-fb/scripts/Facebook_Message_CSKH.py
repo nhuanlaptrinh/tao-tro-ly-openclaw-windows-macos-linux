@@ -4,6 +4,8 @@ import gspread
 from google.oauth2.service_account import Credentials
 from dotenv import load_dotenv
 
+from facebook_graph import graph_url, response_error
+
 load_dotenv()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -18,27 +20,33 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapi
 # ==========================================
 # CẤU HÌNH FACEBOOK FANPAGE
 # ==========================================
-FB_PAGE_ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN", "Nhap_API_Cua_Ban")
+MESSENGER_TOKEN = (
+    os.getenv("MESSENGER_TOKEN")
+    or os.getenv("MESSENGER_PAGE_ACCESS_TOKEN")
+    or os.getenv("FB_PAGE_ACCESS_TOKEN")
+    or ""
+).strip()
 
 
 def send_facebook_message(psid: str, message: str) -> dict:
     """Gửi tin nhắn chăm sóc khách hàng tới một PSID qua Facebook Graph API."""
-    if not FB_PAGE_ACCESS_TOKEN or FB_PAGE_ACCESS_TOKEN == "Nhap_API_Cua_Ban":
-        raise ValueError("Chưa cấu hình FB_PAGE_ACCESS_TOKEN trong file .env")
+    if not MESSENGER_TOKEN:
+        raise ValueError("Chưa cấu hình MESSENGER_TOKEN trong file .env")
         
-    url = "https://graph.facebook.com/v19.0/me/messages"
-    params = {"access_token": FB_PAGE_ACCESS_TOKEN}
+    url = graph_url("me/messages")
+    params = {"access_token": MESSENGER_TOKEN}
     data = {
         "recipient": {"id": psid},
         "message": {"text": message},
         "messaging_type": "RESPONSE"
     }
     
-    print(f"[Facebook] Đang gửi tin nhắn tới PSID '{psid}'...")
+    masked_psid = f"***{psid[-4:]}" if len(psid) > 4 else "***"
+    print(f"[Facebook] Đang gửi tin nhắn tới PSID '{masked_psid}'...")
     response = requests.post(url, params=params, json=data, timeout=60)
         
     if not response.ok:
-        raise RuntimeError(f"Lỗi khi gọi Fanpage API: {response.text}")
+        raise RuntimeError(f"Lỗi khi gọi Messenger API: {response_error(response)}")
         
     return response.json()
 

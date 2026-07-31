@@ -7,7 +7,7 @@ Dùng checklist này khi user yêu cầu tạo ảnh/poster/banner nhưng OpenCl
 - Không dừng ở lỗi thiếu image provider key nếu ảnh có thể là poster, banner, thumbnail, infographic, cover khóa học, ảnh chữ, ảnh quảng bá đơn giản.
 - Ưu tiên tạo bằng SVG/Python local giống member mẫu `anhlaptrinh`.
 - Chỉ cần AI image provider khi user yêu cầu ảnh photorealistic, minh họa phức tạp, style nghệ thuật sinh ảnh, hoặc ảnh cần model diffusion.
-- Lưu output trong workspace OpenClaw của member VPS, ví dụ `/root/.openclaw/workspace/<ten_file>.svg` và `.png` bên trong container.
+- Lưu output trong workspace OpenClaw của member VPS, ví dụ `/home/<ten_user>/.openclaw/workspace/<ten_file>.svg` và `.png` bên trong container.
 
 ## Kiểm tra/cài công cụ
 
@@ -33,10 +33,10 @@ apt-get install -y imagemagick librsvg2-bin python3
 Chạy trong container member VPS:
 
 ```bash
-docker exec user-<ten_user> sh -lc 'mkdir -p /root/.openclaw/workspace'
-docker exec -i user-<ten_user> python3 - <<'PY'
+docker exec -e HOME=/home/<ten_user> user-<ten_user> sh -lc 'mkdir -p /home/<ten_user>/.openclaw/workspace'
+docker exec -i -e HOME=/home/<ten_user> user-<ten_user> python3 - <<'PY'
 from pathlib import Path
-workspace = Path('/root/.openclaw/workspace')
+workspace = Path('/home/<ten_user>/.openclaw/workspace')
 svg_path = workspace / 'poster_demo.svg'
 png_path = workspace / 'poster_demo.png'
 svg = '''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
@@ -60,7 +60,7 @@ print(svg_path)
 print(png_path)
 PY
 # Ưu tiên rsvg-convert cho SVG; fallback convert nếu cần
-docker exec user-<ten_user> sh -lc 'rsvg-convert /root/.openclaw/workspace/poster_demo.svg -o /root/.openclaw/workspace/poster_demo.png || convert /root/.openclaw/workspace/poster_demo.svg /root/.openclaw/workspace/poster_demo.png; file /root/.openclaw/workspace/poster_demo.png'
+docker exec -e HOME=/home/<ten_user> user-<ten_user> sh -lc 'rsvg-convert /home/<ten_user>/.openclaw/workspace/poster_demo.svg -o /home/<ten_user>/.openclaw/workspace/poster_demo.png || convert /home/<ten_user>/.openclaw/workspace/poster_demo.svg /home/<ten_user>/.openclaw/workspace/poster_demo.png; file /home/<ten_user>/.openclaw/workspace/poster_demo.png'
 ```
 
 ## Quy tắc thiết kế nhanh

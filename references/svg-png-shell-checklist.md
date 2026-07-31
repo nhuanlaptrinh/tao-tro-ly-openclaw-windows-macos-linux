@@ -22,10 +22,10 @@ Nếu lỗi liên quan `Refusing to traverse symlink in exec approvals path`, tr
 cd "$(readlink -f .)"
 ```
 
-Trong member container, nguyên nhân thường gặp là Gateway chạy với `HOME=/root` trong khi `/root/.openclaw` là symlink. Kiểm tra:
+Trong member container, nguyên nhân thường gặp là Gateway chạy với `HOME=/root` trong khi home thật là `/home/<ten_user>`. Kiểm tra:
 
 ```bash
-docker exec user-<ten_user> sh -lc 'readlink -f /root/.openclaw; p=$(pgrep -f "^openclaw$" | head -1); tr "\0" "\n" </proc/$p/environ | grep "^HOME="'
+docker exec -e HOME=/home/<ten_user> user-<ten_user> sh -lc 'readlink -f /home/<ten_user>/.openclaw; p=$(pgrep -f "^openclaw$" | head -1); tr "\0" "\n" </proc/$p/environ | grep "^HOME="'
 ```
 
 Nếu thấy `HOME=/root`, restart bằng home thật:
@@ -39,7 +39,7 @@ Không dùng `chmod 777` và không xóa symlink để xử lý lỗi approvals 
 Nếu đang làm trong project member VPS, ưu tiên đường dẫn thật trên host:
 
 ```bash
-cd /root/Apps/member_vps/docker-users
+cd /root/docker-users
 ```
 
 ## 2. Kiểm tra `/tmp`
@@ -90,8 +90,8 @@ Kết quả mong muốn: cả hai file là `PNG image data`.
 Chạy cùng checklist bên trong container:
 
 ```bash
-docker exec user-<ten_user> sh -lc 'stat -c "%a %U:%G %n" /tmp; command -v convert || true; command -v rsvg-convert || true; python3 --version || true'
-docker exec user-<ten_user> sh -lc 'chmod 1777 /tmp; apt-get update; apt-get install -y imagemagick librsvg2-bin python3'
+docker exec -e HOME=/home/<ten_user> user-<ten_user> sh -lc 'stat -c "%a %U:%G %n" /tmp; command -v convert || true; command -v rsvg-convert || true; python3 --version || true'
+docker exec -e HOME=/home/<ten_user> user-<ten_user> sh -lc 'chmod 1777 /tmp; apt-get update; apt-get install -y imagemagick librsvg2-bin python3'
 ```
 
 Không tự sửa/xóa file project nếu user chỉ yêu cầu kiểm tra/cài tool.

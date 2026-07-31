@@ -2,7 +2,8 @@
 
 ## Input
 - [ ] Member name
-- [ ] Email khách hàng dùng đăng nhập Token Codex
+- [ ] Email khách hàng nếu cần tạo tài khoản dashboard Token Codex
+- [ ] Token Codex API key nhận qua kênh bảo mật nếu đã có sẵn
 - [ ] Telegram account ID
 - [ ] Telegram user ID
 - [ ] Telegram Group ID
@@ -12,17 +13,17 @@
 ## Preflight
 - [ ] Kiểm tra hiện trạng
 - [ ] Backup cấu hình
-- [ ] Automation dry-run
+- [ ] Kiểm tra manager/image/container/SSH port/web port/volume thực tế; không giả định có dry-run
 - [ ] Không lộ secret
 
 ## Token Codex trước VPS
-- [ ] Đọc mục **Tạo Token Codex Trước Member VPS** trong skill chính
-- [ ] Dry-run tài khoản theo email khách hàng
-- [ ] Tạo user mặc định `alt123`, credit `250 USD`
-- [ ] Tạo 1 API tên gắn với member
-- [ ] Output/key lưu file quyền `600` dưới `/root/Data/private_accounts/token_codex/`
+- [ ] Đọc mục **Chuẩn bị Token Codex trước member VPS** trong skill chính
+- [ ] `/models` trả HTTP `200` và có đủ `GPT-5.6-sol`, `GPT-5.6-terra`, `GPT-5.6-luna`
+- [ ] Nếu tạo tài khoản mới: provisioning backend đã được xác minh và dry-run thực sự tồn tại
+- [ ] Nếu sinh key mới: thư mục `/root/Data/private_accounts/token_codex/` quyền `700`, file output quyền `600`
 - [ ] Không in full API key vào chat hoặc log chung
-- [ ] Truyền key qua `CUSTOM_PROVIDER_API_KEY`
+- [ ] Truyền key qua `TOKEN_CODEX_API_KEY`; chỉ dùng `CUSTOM_PROVIDER_API_KEY` để tương thích workflow cũ
+- [ ] Lưu `/home/<name>/.openclaw/token-codex.env` quyền `600`; `openclaw.json` chỉ chứa `${TOKEN_CODEX_API_KEY}`
 
 ## Telegram DM
 - [ ] Global và account `dmPolicy` là `pairing`
@@ -59,7 +60,7 @@
 
 ## Runtime
 - [ ] config validate
-- [ ] Restart tmux
+- [ ] Restart tmux sau khi source `token-codex.env`
 - [ ] gateway status OK
 - [ ] channels probe OK
 
@@ -77,18 +78,20 @@
 
 ## Hệ thống
 - [ ] Token Codex provider dùng `https://codex.anhlaptrinh.vn/v1`
-- [ ] API Token Codex đã cấu hình và model test thành công
-- [ ] Audio/STT được bật mặc định: `tools.media.audio.enabled=true`, ngôn ngữ `vi`, model `gpt-4o-mini-transcribe` qua provider `openai`/9Router
-- [ ] Provider audio có model khai báo `input: ["audio"]` và tái sử dụng credential 9Router hiện có mà không in secret
+- [ ] Không thêm `/v1` lần thứ hai; API là `openai-completions`
+- [ ] API Token Codex đã cấu hình và cả ba model chat test thành công
+- [ ] Không còn provider/model cũ trong config hoặc cache model của member
+- [ ] Gọi Token Codex `/models` không lộ secret và kiểm tra chính xác model `gpt-4o-mini-transcribe`
+- [ ] Chỉ bật audio/STT qua provider `token-codex` khi model được công bố; nếu không có hoặc kiểm tra lỗi, đặt `tools.media.audio.enabled=false`
+- [ ] Xóa provider audio `openai` cũ; không tự thay model hoặc fallback sang provider khác
 - [ ] Không tự cài `ffmpeg` chỉ để nghe voice; giữ nguyên nếu đã có, chỉ cài khi cần chuyển đổi định dạng riêng
-- [ ] Gửi một voice tiếng Việt ngắn để xác nhận bot nhận `.ogg` và trả transcript
+- [ ] Chỉ gửi voice tiếng Việt để kiểm tra khi STT đã được xác nhận khả dụng và người dùng cho phép
 - [ ] DuckDuckGo
 - [ ] Second AI Brain
 - [ ] Proxy direct-first
 
 ## Hoàn tất
-- [ ] Gửi email Token Codex cho khách
-- [ ] Gửi mật khẩu Token Codex mặc định `alt123`
+- [ ] Chỉ gửi email/mật khẩu Token Codex khi tài khoản thực tế đã được tạo
 - [ ] Gửi link xem credit `https://codex.anhlaptrinh.vn/`
 - [ ] Không gửi full API key
 - [ ] Chưa test: chờ xác nhận thực tế

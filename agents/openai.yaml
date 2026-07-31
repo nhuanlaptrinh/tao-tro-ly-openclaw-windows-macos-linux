@@ -1,4 +1,4 @@
 interface:
   display_name: "OpenClaw Windows, macOS, Linux"
-  short_description: "Một skill tự chứa cho OpenClaw đa nền tảng và VPS."
-  default_prompt: "Dùng duy nhất skill này, xác định Windows, macOS hay Linux và loại máy local/VPS/member, rồi cài hoặc cấu hình OpenClaw bằng workflow tích hợp mà không gọi skill phụ."
+  short_description: "Skill OpenClaw đa nền tảng, VPS và Facebook."
+  default_prompt: "Dùng duy nhất skill này, xác định Windows, macOS hay Linux và loại máy local/VPS/member, rồi cài, cấu hình hoặc vận hành OpenClaw; với Token Codex bắt buộc dùng https://codex.anhlaptrinh.vn/v1, openai-completions và đúng ba model GPT-5.6-sol/GPT-5.6-terra/GPT-5.6-luna, nạp key qua TOKEN_CODEX_API_KEY; nếu có yêu cầu Facebook thì dùng phần A/B/C tích hợp trong chính skill này, không gọi skill phụ."

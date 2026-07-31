@@ -2,20 +2,33 @@ import os
 import requests
 from dotenv import load_dotenv
 
+from facebook_graph import graph_url, resolve_page_id, response_error
+
 load_dotenv()
 
-FB_PAGE_ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN", "")
+MESSENGER_TOKEN = (
+    os.getenv("MESSENGER_TOKEN")
+    or os.getenv("MESSENGER_PAGE_ACCESS_TOKEN")
+    or os.getenv("FB_PAGE_ACCESS_TOKEN")
+    or ""
+).strip()
 
 def get_recent_psids():
-    if not FB_PAGE_ACCESS_TOKEN or FB_PAGE_ACCESS_TOKEN == "Nhap_API_Cua_Ban":
-        print("❌ Lỗi: Bạn chưa cấu hình FB_PAGE_ACCESS_TOKEN trong file .env")
+    if not MESSENGER_TOKEN:
+        print("❌ Lỗi: Bạn chưa cấu hình MESSENGER_TOKEN trong file .env")
+        return
+
+    try:
+        page_id = resolve_page_id(MESSENGER_TOKEN)
+    except Exception as error:
+        print(f"❌ {error}")
         return
 
     print("Đang quét danh sách khách hàng đã nhắn tin cho Fanpage...\n")
-    url = "https://graph.facebook.com/v19.0/me/conversations"
+    url = graph_url("me/conversations")
     params = {
         "fields": "participants",
-        "access_token": FB_PAGE_ACCESS_TOKEN,
+        "access_token": MESSENGER_TOKEN,
         "limit": 50  # Lấy 50 cuộc hội thoại gần nhất
     }
 
@@ -24,7 +37,7 @@ def get_recent_psids():
         data = response.json()
 
         if not response.ok:
-            print(f"❌ Lỗi Graph API: {data}")
+            print(f"❌ Lỗi Graph API: {response_error(response)}")
             return
 
         conversations = data.get("data", [])
@@ -42,10 +55,12 @@ def get_recent_psids():
             for p in participants:
                 name = p.get("name", "Unknown")
                 psid = p.get("id", "")
+                if str(psid) == page_id:
+                    continue
                 print(f"{name:<30} | {psid}")
                 
         print("-" * 65)
-        print("💡 Lưu ý: Hãy loại trừ tên của chính Fanpage ra nhé!")
+        print("Đã tự loại trừ ID của chính Fanpage.")
         
     except Exception as e:
         print(f"❌ Lỗi kết nối: {e}")
