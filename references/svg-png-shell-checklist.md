@@ -22,24 +22,24 @@ Nếu lỗi liên quan `Refusing to traverse symlink in exec approvals path`, tr
 cd "$(readlink -f .)"
 ```
 
-Trong member container, nguyên nhân thường gặp là Gateway chạy với `HOME=/root` trong khi `/root/.openclaw` là symlink. Kiểm tra:
+Trong member container, chuẩn bắt buộc là `HOME=/root` và `/root/.openclaw` phải là thư mục thật trên volume persistent. Kiểm tra:
 
 ```bash
-docker exec user-<ten_user> sh -lc 'readlink -f /root/.openclaw; p=$(pgrep -f "^openclaw$" | head -1); tr "\0" "\n" </proc/$p/environ | grep "^HOME="'
+docker exec -e HOME=/root user-<ten_user> sh -lc 'readlink -f /root/.openclaw; p=$(pgrep -f "^openclaw$" | head -1); tr "\0" "\n" </proc/$p/environ | grep "^HOME="'
 ```
 
-Nếu thấy `HOME=/root`, restart bằng home thật:
+Nếu `HOME` khác `/root` hoặc `/root/.openclaw` là symlink, dừng Gateway, sửa volume/runtime về root thật rồi restart:
 
 ```bash
-docker exec user-<ten_user> sh -lc 'HOME=/home/<ten_user> tmux kill-session -t openclaw 2>/dev/null || true; HOME=/home/<ten_user> tmux new-session -d -s openclaw "HOME=/home/<ten_user> openclaw gateway run"'
+docker exec user-<ten_user> sh -lc 'test ! -L /root/.openclaw; HOME=/root tmux kill-session -t openclaw 2>/dev/null || true; HOME=/root tmux new-session -d -s openclaw "HOME=/root openclaw skills check && HOME=/root openclaw gateway run"'
 ```
 
-Không dùng `chmod 777` và không xóa symlink để xử lý lỗi approvals path.
+Không dùng `chmod 777`. Nếu `/root/.openclaw` đang là symlink cũ, backup dữ liệu rồi migrate sang thư mục thật trên volume `/root`; không xóa symlink khi chưa có bản sao và kế hoạch phục hồi.
 
 Nếu đang làm trong project member VPS, ưu tiên đường dẫn thật trên host:
 
 ```bash
-cd /root/Apps/member_vps/docker-users
+cd /root/docker-users
 ```
 
 ## 2. Kiểm tra `/tmp`
@@ -90,8 +90,8 @@ Kết quả mong muốn: cả hai file là `PNG image data`.
 Chạy cùng checklist bên trong container:
 
 ```bash
-docker exec user-<ten_user> sh -lc 'stat -c "%a %U:%G %n" /tmp; command -v convert || true; command -v rsvg-convert || true; python3 --version || true'
-docker exec user-<ten_user> sh -lc 'chmod 1777 /tmp; apt-get update; apt-get install -y imagemagick librsvg2-bin python3'
+docker exec -e HOME=/root user-<ten_user> sh -lc 'stat -c "%a %U:%G %n" /tmp; command -v convert || true; command -v rsvg-convert || true; python3 --version || true'
+docker exec -e HOME=/root user-<ten_user> sh -lc 'chmod 1777 /tmp; apt-get update; apt-get install -y imagemagick librsvg2-bin python3'
 ```
 
 Không tự sửa/xóa file project nếu user chỉ yêu cầu kiểm tra/cài tool.

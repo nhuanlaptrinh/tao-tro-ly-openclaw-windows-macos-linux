@@ -1,10 +1,14 @@
-# Workflow Summary
+# Tóm tắt workflow
 
-1. Require the customer's email, then use the integrated Token Codex command in the main `SKILL.md` to dry-run and create the account with default password `alt123`, credit `250 USD`, and one member-named API.
-2. Save the one-time API output in `/root/Data/private_accounts/token_codex/` with mode `600`; never print the full key in chat or shared logs.
-3. Run member automation dry-run with `--name <user>`.
-4. Run real automation with the saved key passed through `CUSTOM_PROVIDER_API_KEY`, plus Telegram env vars when available.
-5. Resolve the assigned host web port mapped to container port `80` and the public IPv4.
-6. Configure Nginx, Gateway Token, Telegram policy, Second AI Brain and shared fallback proxy.
-7. Verify Token Codex provider/model, public dashboard HTTP `200`, gateway and channel status.
-8. Report member VPS access plus Token Codex email, password, and `https://codex.anhlaptrinh.vn/` for remaining credit; never disclose the full API key.
+1. Nhận API key Token Codex qua kênh bảo mật hoặc xác minh provisioning backend thật trước khi tạo tài khoản; chỉ cần email khi phải tạo tài khoản dashboard.
+2. Nếu sinh key mới, tạo `/root/Data/private_accounts/token_codex/` quyền `700`, lưu output một lần bằng file quyền `600` và không in full key vào chat hoặc log dùng chung.
+3. Preflight manager container, image, SSH port, web port, volume và tên container thực tế; bắt buộc có root volume persistent map vào `/root`, không giả định tồn tại dry-run.
+4. Cài đúng version OpenClaw bằng root với `HOME=/root`, OpenClaw root `/root/.openclaw` và workspace `/root/.openclaw/workspace`; không dừng sau khi chỉ tạo container nền.
+5. Chạy `scripts/sync_all_skills_to_root.py` từ root quản trị để copy toàn bộ skill trực tiếp vào `/root/.openclaw/workspace/skills`, sau đó chạy `--check` và `openclaw skills check` trước khi start Gateway.
+6. Tạo/cấu hình member bằng key truyền qua `TOKEN_CODEX_API_KEY` hoặc `CUSTOM_PROVIDER_API_KEY`, kèm biến Telegram khi có.
+7. Dùng Docker inspection để xác định đúng web port host map vào port `80` của container và public IPv4.
+8. Lưu key tại `/root/.openclaw/token-codex.env` quyền `600`; `openclaw.json` chỉ chứa `${TOKEN_CODEX_API_KEY}` và phải source env trước mỗi lần start Gateway.
+9. Chỉ cấu hình Nginx, Gateway Token, Telegram policy, Second AI Brain và shared fallback proxy khi từng thành phần tồn tại và đã validate.
+10. Xác minh base URL `https://codex.anhlaptrinh.vn/v1`, API `openai-completions` và đúng ba model `GPT-5.6-sol`, `GPT-5.6-terra`, `GPT-5.6-luna`; không khôi phục provider cũ hoặc thêm `/v1` hai lần.
+11. Xác minh dashboard public HTTP `200`, trạng thái Gateway, skill và channel.
+12. Chỉ bàn giao truy cập VPS member và credential dashboard Token Codex khi tài khoản thật đã được tạo; gửi `https://codex.anhlaptrinh.vn/` để xem credit và không tiết lộ full API key.

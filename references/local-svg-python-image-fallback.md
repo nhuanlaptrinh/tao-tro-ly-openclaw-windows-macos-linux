@@ -33,8 +33,8 @@ apt-get install -y imagemagick librsvg2-bin python3
 Chạy trong container member VPS:
 
 ```bash
-docker exec user-<ten_user> sh -lc 'mkdir -p /root/.openclaw/workspace'
-docker exec -i user-<ten_user> python3 - <<'PY'
+docker exec -e HOME=/root user-<ten_user> sh -lc 'mkdir -p /root/.openclaw/workspace'
+docker exec -i -e HOME=/root user-<ten_user> python3 - <<'PY'
 from pathlib import Path
 workspace = Path('/root/.openclaw/workspace')
 svg_path = workspace / 'poster_demo.svg'
@@ -60,7 +60,7 @@ print(svg_path)
 print(png_path)
 PY
 # Ưu tiên rsvg-convert cho SVG; fallback convert nếu cần
-docker exec user-<ten_user> sh -lc 'rsvg-convert /root/.openclaw/workspace/poster_demo.svg -o /root/.openclaw/workspace/poster_demo.png || convert /root/.openclaw/workspace/poster_demo.svg /root/.openclaw/workspace/poster_demo.png; file /root/.openclaw/workspace/poster_demo.png'
+docker exec -e HOME=/root user-<ten_user> sh -lc 'rsvg-convert /root/.openclaw/workspace/poster_demo.svg -o /root/.openclaw/workspace/poster_demo.png || convert /root/.openclaw/workspace/poster_demo.svg /root/.openclaw/workspace/poster_demo.png; file /root/.openclaw/workspace/poster_demo.png'
 ```
 
 ## Quy tắc thiết kế nhanh

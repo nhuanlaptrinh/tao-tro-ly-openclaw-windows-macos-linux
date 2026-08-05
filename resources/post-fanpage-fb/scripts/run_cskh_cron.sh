@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-PROJECT_ROOT="/root/.agents/skills/tao-tro-ly-openclaw-windows-macos-linux/resources/post-fanpage-fb"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCRIPT_PATH="$PROJECT_ROOT/scripts/Facebook_Message_CSKH.py"
 LOG_DIR="$PROJECT_ROOT/logs"
 LOG_FILE="$LOG_DIR/cskh_cron.log"
@@ -18,7 +19,8 @@ export TZ="Asia/Ho_Chi_Minh"
   if [ -f "$PYTHON_BIN" ]; then
     "$PYTHON_BIN" "$SCRIPT_PATH"
   else
-    /usr/bin/python3 "$SCRIPT_PATH"
+    echo "Thiếu $PYTHON_BIN; cài venv và dependencies trước khi chạy."
+    exit 1
   fi
   
   status=$?

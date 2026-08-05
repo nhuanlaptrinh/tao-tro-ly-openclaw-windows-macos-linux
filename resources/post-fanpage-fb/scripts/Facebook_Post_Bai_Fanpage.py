@@ -4,6 +4,8 @@ import gspread
 from google.oauth2.service_account import Credentials
 from dotenv import load_dotenv
 
+from facebook_graph import graph_url, resolve_page_id, response_error
+
 load_dotenv()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -23,8 +25,7 @@ IMAGE_DIRS = [
 # ==========================================
 # CẤU HÌNH FACEBOOK FANPAGE (Đăng Bài API)
 # ==========================================
-FB_PAGE_ID = os.getenv("FB_PAGE_ID", "Nhap_Gia_Tri_Cua_Ban")
-FB_PAGE_ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN", "Nhap_API_Cua_Ban")
+FB_PAGE_ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN", "").strip()
 
 
 def find_image_path(img_name: str) -> str:
@@ -47,13 +48,13 @@ def find_image_path(img_name: str) -> str:
     return ""
 
 
-def post_to_facebook_fanpage(content: str, image_path: str = "") -> dict:
+def post_to_facebook_fanpage(page_id: str, content: str, image_path: str = "") -> dict:
     """Đăng bài viết (kèm ảnh nếu có) lên Facebook Fanpage."""
     params = {"access_token": FB_PAGE_ACCESS_TOKEN}
     
     if image_path:
         # Nếu có ảnh, dùng endpoint /photos
-        url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photos"
+        url = graph_url(f"{page_id}/photos")
         data = {"caption": content}
         print(f"[Facebook] Đang đăng bài KÈM ẢNH '{image_path}' lên Fanpage...")
         
@@ -63,14 +64,14 @@ def post_to_facebook_fanpage(content: str, image_path: str = "") -> dict:
             
     else:
         # Nếu không có ảnh, dùng endpoint /feed
-        url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/feed"
+        url = graph_url(f"{page_id}/feed")
         data = {"message": content}
         print(f"[Facebook] Đang đăng bài CHỈ CÓ TEXT lên Fanpage...")
         
         response = requests.post(url, params=params, data=data, timeout=60)
         
     if not response.ok:
-        raise RuntimeError(f"Lỗi khi gọi Fanpage API: {response.text}")
+        raise RuntimeError(f"Lỗi khi gọi Fanpage API: {response_error(response)}")
         
     return response.json()
 
@@ -80,6 +81,17 @@ def main():
     print("VẬN HÀNH AUTO ĐĂNG BÀI FACEBOOK FANPAGE")
     print("========================================")
     
+    if not FB_PAGE_ACCESS_TOKEN:
+        print("❌ Chưa cấu hình FB_PAGE_ACCESS_TOKEN trong file .env")
+        return
+
+    try:
+        page_id = resolve_page_id(FB_PAGE_ACCESS_TOKEN)
+        print(f"Đã tự xác định Page ID: {page_id}")
+    except Exception as error:
+        print(f"❌ {error}")
+        return
+
     print("Đang kết nối tới Google Sheet...")
     try:
         credentials = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=SCOPES)
@@ -133,7 +145,7 @@ def main():
                 
                 # Tiến hành đăng lên Fanpage API
                 try:
-                    fb_result = post_to_facebook_fanpage(full_content, real_image_path)
+                    fb_result = post_to_facebook_fanpage(page_id, full_content, real_image_path)
                     post_id = fb_result.get('post_id') or fb_result.get('id')
                     print(f"✅ Đăng thành công! ID Bài viết Fanpage: {post_id}")
                     
